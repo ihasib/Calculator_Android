@@ -111,7 +111,19 @@ interface  StringReceivable {
     void receive(String data);
 }
 
+enum Operation {
+    ADDITION {
+        public String toString() {
+            return "+";
+        }
+    };
+}
+
 class OperationManager implements StringReceivable {
+    private String firstOperand = "";
+    private String secondOperand = new String("");
+    private String firstOperator;
+    private Operation secondOperator;
     private OperationResponseReceivable mainActivity;
     OperationManager(OperationResponseReceivable mainActivity) {
         this.mainActivity = mainActivity;
@@ -126,5 +138,23 @@ class OperationManager implements StringReceivable {
     private void recognizeButton(String buttonTitle) {
         System.out.println("has1:="+buttonTitle);
         mainActivity.updateDisplay(buttonTitle);
+        switch (buttonTitle) {
+            case "+":
+                secondOperator = Operation.ADDITION;
+                executeOperation();
+                break;
+            default:
+                generateSecondOperand(buttonTitle);
+        }
+    }
+
+    private void executeOperation() {
+        if (secondOperator == Operation.ADDITION) {
+            System.out.println("calculator reached");
+        }
+    }
+
+    private void generateSecondOperand(String newChar) {
+        secondOperand = secondOperand + newChar;
     }
 }
