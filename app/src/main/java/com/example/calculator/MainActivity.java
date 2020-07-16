@@ -185,8 +185,8 @@ class OperationManager implements StringReceivable, Observer {
     }
 
     private void recognizeButton(String buttonTitle) {
-        System.out.println("has1:="+buttonTitle);
-        mainActivity.updateDisplay(buttonTitle);
+//        System.out.println("has1:="+buttonTitle);
+//        mainActivity.updateDisplay(buttonTitle);
         switch (buttonTitle) {
             case "+":
                 secondOperator = Operation.ADDITION;
@@ -208,11 +208,42 @@ class OperationManager implements StringReceivable, Observer {
                 secondOperator = Operation.MODULUS;
                 executeOperation();
                 break;
+            case "=":
+                secondOperator = Operation.EQUAL;
+                executeOperation();
+                break;
+            case "+/-":
+                negateSecondOperand();
+                break;
+            case ".":
+                this.appendDecimalPoint();
+                break;
             default:
                 generateSecondOperand(buttonTitle);
         }
     }
 
+    private void negateSecondOperand() {
+        String secondOperandValue = secondOperand.get();
+        if(secondOperandValue.contains(".")) {
+            return;
+        }
+        if(secondOperandValue.startsWith("-")) {
+            secondOperandValue = secondOperandValue.substring(1);
+        } else {
+            secondOperandValue = "-" + secondOperandValue;
+        }
+        secondOperand.set(secondOperandValue);
+    }
+
+    private void appendDecimalPoint() {
+        String secondOperandValue = secondOperand.get();
+        if(secondOperandValue.contains(".")) {
+            return;
+        }
+        secondOperandValue = secondOperandValue + ".";
+        secondOperand.set(secondOperandValue);
+    }
     private void executeOperation() {
         if (firstOperator == Operation.NONE) {
             firstOperand = secondOperand.get();
