@@ -26,7 +26,10 @@ public class MainActivity extends AppCompatActivity implements OperationResponse
         final Button clear;
         setContentView(R.layout.calculatoractivity_main);
 
+
+        operationManager = new OperationManager(MainActivity.this);
         displayText = findViewById(R.id.calulatorScreen);
+        displayText.addTextChangedListener(new MyWatcher());
         Button n0 = findViewById(R.id.n0);
         Button n1 = findViewById(R.id.n1);
         Button n2 = findViewById(R.id.n2);
@@ -44,19 +47,17 @@ public class MainActivity extends AppCompatActivity implements OperationResponse
         Button subtraction = findViewById(R.id.subtraction);
         Button multiplication = findViewById(R.id.multiplication);
         Button division = findViewById(R.id.division);
-        Button modulous = findViewById(R.id.modulous);
+        Button modulus = findViewById(R.id.modulous);
         Button negation = findViewById(R.id.negation);
         clear = findViewById(R.id.clear);
 
         Button.OnClickListener calculatorButtonListener = new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                displayText.addTextChangedListener(new MyWatcher());
-
+                System.out.println("hasin1");
                 Button b = (Button) view;
-                operationManager = new OperationManager(MainActivity.this);
                 operationManager.receive((String) b.getText());
-                System.out.println("has1:-"+clear.getText());
+//                System.out.println("has1:-"+clear.getText());
             }
         };
         n0.setOnClickListener(calculatorButtonListener);
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements OperationResponse
         subtraction.setOnClickListener(calculatorButtonListener);
         multiplication.setOnClickListener(calculatorButtonListener);
         division.setOnClickListener(calculatorButtonListener);
-        modulous.setOnClickListener(calculatorButtonListener);
+        modulus.setOnClickListener(calculatorButtonListener);
         negation.setOnClickListener(calculatorButtonListener);
         clear.setOnClickListener(calculatorButtonListener);
     }
@@ -116,17 +117,65 @@ enum Operation {
         public String toString() {
             return "+";
         }
-    };
+    },
+    SUBTRACTION {
+        public String toString() {
+            return "-";
+        }
+    },
+    MULTIPLICATION {
+        public String toString() {
+            return "*";
+        }
+    },
+    DIVISION {
+        public String toString() {
+            return "/";
+        }
+    },
+    MODULUS {
+        public String toString() {
+            return "%";
+        }
+    },
+    EQUAL {
+        public String toString() {
+            return "=";
+        }
+    },
+    NONE
+    ;
 }
 
-class OperationManager implements StringReceivable {
+class CustomString {
+    private String value;
+    private Observer operationManager;
+    CustomString(String value, Observer operationManager) {
+        this.value = value;
+        this.operationManager = operationManager;
+    }
+    public void set(String value) {
+        this.value = value;
+        operationManager.updateDisplay();
+    }
+    public String get() {
+        return value;
+    }
+}
+
+interface Observer {
+    void updateDisplay();
+}
+
+class OperationManager implements StringReceivable, Observer {
     private String firstOperand = "";
-    private String secondOperand = new String("");
-    private String firstOperator;
+    private CustomString secondOperand;
+    private Operation firstOperator = Operation.NONE;
     private Operation secondOperator;
     private OperationResponseReceivable mainActivity;
     OperationManager(OperationResponseReceivable mainActivity) {
         this.mainActivity = mainActivity;
+        secondOperand = new CustomString("", this);
     }
 
     @Override
@@ -143,18 +192,75 @@ class OperationManager implements StringReceivable {
                 secondOperator = Operation.ADDITION;
                 executeOperation();
                 break;
+            case "-":
+                secondOperator = Operation.SUBTRACTION;
+                executeOperation();
+                break;
+            case "*":
+                secondOperator = Operation.MULTIPLICATION;
+                executeOperation();
+                break;
+            case "/":
+                secondOperator = Operation.DIVISION;
+                executeOperation();
+                break;
+            case "%":
+                secondOperator = Operation.MODULUS;
+                executeOperation();
+                break;
             default:
                 generateSecondOperand(buttonTitle);
         }
     }
 
     private void executeOperation() {
-        if (secondOperator == Operation.ADDITION) {
-            System.out.println("calculator reached");
+        if (firstOperator == Operation.NONE) {
+            firstOperand = secondOperand.get();
+            System.out.println("calculator reached"+Calculator.getCalculatedValue(firstOperand,secondOperand.get(),Operation.ADDITION));
+        } else if (firstOperator != Operation.EQUAL) {
+            double result = new Double(firstOperand);
+            if (secondOperand.get() != "") {
+                result = Calculator.getCalculatedValue(firstOperand,secondOperand.get(),firstOperator);
+            }
+            firstOperand = String.valueOf(result);
         }
+        secondOperand.set("");
+        firstOperator = secondOperator;
+        secondOperator = Operation.NONE;
     }
 
     private void generateSecondOperand(String newChar) {
-        secondOperand = secondOperand + newChar;
+        System.out.println("hasin1+"+secondOperand.get() + newChar);
+        secondOperand.set(secondOperand.get() + newChar);
+    }
+
+    @Override
+    public void updateDisplay() {
+        if (secondOperand.get() == "") {
+            mainActivity.updateDisplay(firstOperand);
+        } else {
+            mainActivity.updateDisplay(secondOperand.get());
+        }
+    }
+}
+
+class Calculator {
+    public static double getCalculatedValue(String firstOperand, String secondOperand, Operation operation) {
+        Double dFirstOperand = new Double(firstOperand);
+        Double dSecondOperand = new Double(secondOperand);
+        switch (operation) {
+            case ADDITION:
+                return dFirstOperand + dSecondOperand;
+            case SUBTRACTION:
+                return dFirstOperand - dSecondOperand;
+            case MULTIPLICATION:
+                return dFirstOperand * dSecondOperand;
+            case DIVISION:
+                return dFirstOperand / dSecondOperand;
+            case MODULUS:
+                return dFirstOperand % dSecondOperand;
+            default:
+                return  0.0;
+        }
     }
 }
