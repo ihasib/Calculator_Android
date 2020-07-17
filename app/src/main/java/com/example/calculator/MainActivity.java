@@ -1,5 +1,6 @@
 package com.example.calculator;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
@@ -9,21 +10,30 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+enum ClearanceState {
+    CLEAR {
+        public String toString() { return "C"; }
+    },
+    ALLCLEAR {
+        public String toString() { return "AC"; }
+    };
+}
+
 interface  OperationResponseReceivable {
     void updateDisplay(String text);
-//    func updateClearButton(ClearanceState ClearanceState)
-//    func updateOperatorButton(with operationType: Operation)
+    void updateClearButton(ClearanceState clearanceState);
+    void updateOperatorButton(Operation operationType);
 }
 
 public class MainActivity extends AppCompatActivity implements OperationResponseReceivable {
 
     StringReceivable operationManager;
     TextView displayText;
+    Button clear;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final Button clear;
         setContentView(R.layout.calculatoractivity_main);
 
 
@@ -88,6 +98,17 @@ public class MainActivity extends AppCompatActivity implements OperationResponse
     @Override
     public void updateDisplay(String text) {
         displayText.setText(text);
+    }
+    @Override
+    public void updateClearButton(ClearanceState clearanceState) {
+        if(clearanceState == ClearanceState.ALLCLEAR)
+            clear.setText("AC");
+        else
+            clear.setText("<-");
+    }
+    @Override
+    public void updateOperatorButton(Operation operationType) {
+//        displayText.setText(text);
     }
 }
 
@@ -168,7 +189,7 @@ interface Observer {
 }
 
 class OperationManager implements StringReceivable, Observer {
-    private String firstOperand = "";
+    private String firstOperand = "0";
     private CustomString secondOperand;
     private Operation firstOperator = Operation.NONE;
     private Operation secondOperator;
@@ -185,8 +206,6 @@ class OperationManager implements StringReceivable, Observer {
     }
 
     private void recognizeButton(String buttonTitle) {
-//        System.out.println("has1:="+buttonTitle);
-//        mainActivity.updateDisplay(buttonTitle);
         switch (buttonTitle) {
             case "+":
                 secondOperator = Operation.ADDITION;
@@ -218,9 +237,31 @@ class OperationManager implements StringReceivable, Observer {
             case ".":
                 this.appendDecimalPoint();
                 break;
+            case "AC":
+            case "<-":
+                executeClearance(buttonTitle);
+                break;
             default:
                 generateSecondOperand(buttonTitle);
         }
+    }
+
+    private void executeClearance(String buttonTitle) {
+        if(buttonTitle == "AC") {
+            clearAll();
+            return;
+        }
+        String secondOperandValue = secondOperand.get();
+        secondOperandValue = secondOperandValue.substring(0,secondOperandValue.length()-1);
+        System.out.println("has3"+secondOperandValue);
+        secondOperand.set(secondOperandValue);
+    }
+
+    private void clearAll() {
+        firstOperand = "0";
+        secondOperand.set("0");
+        firstOperator = Operation.NONE;
+        secondOperator = Operation.NONE;
     }
 
     private void negateSecondOperand() {
@@ -267,10 +308,12 @@ class OperationManager implements StringReceivable, Observer {
 
     @Override
     public void updateDisplay() {
-        if (secondOperand.get() == "") {
+        if (secondOperand.get().isEmpty()) {
             mainActivity.updateDisplay(firstOperand);
+            mainActivity.updateClearButton(ClearanceState.ALLCLEAR);
         } else {
             mainActivity.updateDisplay(secondOperand.get());
+            mainActivity.updateClearButton(ClearanceState.CLEAR);
         }
     }
 }
